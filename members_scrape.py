@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup as BS
 import requests
+from main import sanitize_wiki_link
 
 member_words = ['member','og','mdma','leader','hangaround','associate','shinobi','full','prospect','shotcaller','blooded','prime minister',
                 'vice prime minister','command','captain','king','enforcer','goon','g 1','g 2','g 3','lord','boss','president','sergeant',
@@ -36,7 +37,7 @@ def clean_role(role):
     return cleaned_role.strip()
 
 
-def get_twitch_from_url(url, current_rec = 0, max_req = 2):
+def get_twitch_from_url(url):
 
     html = get_html(url)
     aside = html.find_all('aside')[0]
@@ -48,7 +49,7 @@ def get_twitch_from_url(url, current_rec = 0, max_req = 2):
         parent_div = h3.find_parent('div')
         a_tag = parent_div.find('a')
 
-        if a_tag and current_rec < max_req:
+        if a_tag:
 
             if ('twitch' in a_tag['href']):
                 return a_tag['href']
@@ -58,10 +59,7 @@ def get_twitch_from_url(url, current_rec = 0, max_req = 2):
         
             elif ('wiki' in a_tag['href']):
 
-                if 'http' in a_tag['href']:
-                    return get_twitch_from_url(a_tag['href'])
-                else:
-                    return get_twitch_from_url('https://nopixel.fandom.com' + a_tag['href'],current_rec=current_rec+1)
+                return get_twitch_from_url(sanitize_wiki_link(a_tag['href']))
                 
             else:
                 return '' #figure out a method for the people it doesn't work for
@@ -85,8 +83,7 @@ def get_members_from_html(html):
         member_name_tag = parent_div.find('a')
         if (member_name_tag and (member_name_tag.text not in members_set)):
             
-            if 'https' in member_name_tag['href']: link = member_name_tag['href']
-            else: link = 'https://nopixel.fandom.com' + member_name_tag['href']
+            link = sanitize_wiki_link(member_name_tag['href'])
             
             members.append((member_name_tag.text, clean_role(line.text), link, get_twitch_from_url(link)))
             members_set.add(member_name_tag.text)   #need to implement a fix for when there are several people in one box-- the GSF problem!
