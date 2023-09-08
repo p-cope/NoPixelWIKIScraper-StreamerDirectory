@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup as BS
 import requests
+import re
 
 member_words = ['member','og','mdma','leader','hangaround','associate','shinobi','full','prospect','shotcaller','blooded','prime minister',
                 'vice prime minister','command','captain','king','enforcer','goon','g 1','g 2','g 3','lord','boss','president','sergeant',
@@ -78,8 +79,14 @@ def get_twitch_from_url(url):
 
                 return get_twitch_from_url(sanitize_wiki_link(h3a_tag['href']))
         
-    paragraphs = html.find_all('p')
-    matching_paragraphs = [paragraph for paragraph in paragraphs if 'role-played' in paragraph.get_text().lower()]
+    '''paragraphs = html.find_all('p')
+
+    for paragraph in paragraphs:
+        if 'role-played' in paragraph.get_text().lower():
+            print('x' * 1000)
+            print(paragraph)
+
+    matching_paragraphs = [paragraph for paragraph in paragraphs if 'role-played' in paragraph.text.lower()]
 
     if len(matching_paragraphs) > 0:
 
@@ -87,7 +94,16 @@ def get_twitch_from_url(url):
         pa_tag = paragraph.find('a')
     else:
 
-        pa_tag = None
+        pa_tag = None'''
+    
+    pa_tag = None
+
+    for tag in html.find_all(string=re.compile(r"played by", re.I)):
+
+        next_tag = tag.find_next()
+
+        if next_tag and next_tag.name == 'a':
+            pa_tag = next_tag
 
     if pa_tag:
 
