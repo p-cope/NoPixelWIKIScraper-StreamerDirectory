@@ -1,20 +1,29 @@
 from bs4 import BeautifulSoup as BS
 import requests
-from main import sanitize_wiki_link
 
 member_words = ['member','og','mdma','leader','hangaround','associate','shinobi','full','prospect','shotcaller','blooded','prime minister',
                 'vice prime minister','command','captain','king','enforcer','goon','g 1','g 2','g 3','lord','boss','president','sergeant',
                 'chaplain','nomad','soldier','elder','treasurer','secretary','quartermaster','veteran','jefe','capitain','soldado',
                 'ambassador','milf','scrapling','naked','council','founder','gangster','baby','huntsman','curator','sgt','oracle',
                 'patched','sicario','oyabun','wakagashira','shateigashira','hashira','shingiin','adobaiza','komon','isha','kumi','mikomi','butler',
-                'mechanic']
+                'mechanic','sheriff','corporal','deputy','cadet','lieutenant','chief','officer','trooper','warden','ranger','doctor','mayor',
+                'justice','judge','clerk','commissioner','paramedic','emt','trainee','supervisor','detective','director','attorney','admin',
+                'attending','therapist','resident','intern','nurse']
 
-excluded_member_words = ['honourary','honorary','retired','inactive']
+excluded_member_words = ['honourary','honorary','retired','inactive','branch']
 
 twitch_link_words = ['played','twitch']
 
 names = []
 
+
+def sanitize_wiki_link(url):
+
+    if 'http' in url:
+        return url
+    else:
+        return 'https://nopixel.fandom.com' + url
+    
 
 def get_html(url):
 
@@ -40,7 +49,12 @@ def clean_role(role):
 def get_twitch_from_url(url):
 
     html = get_html(url)
-    aside = html.find_all('aside')[0]
+
+    try:
+        aside = html.find_all('aside')[0]
+    except IndexError:
+        print(f"Failed to process URL: {url}")
+        return None
 
     h3s = aside.find_all('h3', string=lambda text: any(word in (text or '').lower() for word in twitch_link_words))
 
@@ -62,10 +76,10 @@ def get_twitch_from_url(url):
                 return get_twitch_from_url(sanitize_wiki_link(a_tag['href']))
                 
             else:
-                return '' #figure out a method for the people it doesn't work for
+                return a_tag.text#figure out a method for the people it doesn't work for
         
-        else:
-            return ''   
+        
+        else: return '' 
 
 
 def get_members_from_html(html):
@@ -75,7 +89,7 @@ def get_members_from_html(html):
 
     aside = html.find_all('aside')[0]
 
-    h3s = aside.find_all('h3', string=lambda text: any(word in (text or '').lower() for word in member_words) and not any(excluded_word in (text or '') for excluded_word in excluded_member_words)) #(text or '') is essential else it throws a fit at NoneTypes
+    h3s = aside.find_all('h3', string=lambda text: any(word in (text or '').lower() for word in member_words) and not any(excluded_word in (text or '').lower() for excluded_word in excluded_member_words)) #(text or '') is essential else it throws a fit at NoneTypes
     
     for line in h3s:
 

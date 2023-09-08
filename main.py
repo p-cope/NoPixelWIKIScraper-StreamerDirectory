@@ -7,9 +7,14 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 }
 
-GANG_PAGE_URL = 'https://nopixel.fandom.com/wiki/Category:Gangs'
-GANG_PAGE_URL_2 = 'https://nopixel.fandom.com/wiki/Category:Gangs?from=Seaside'
-RACING_CREW_URL = 'https://nopixel.fandom.com/wiki/Category:Racing_Crew'
+active_gov = [("PBSO", "/wiki/Paleto_Bay_Sheriff%27s_Office"),("SDSO", "/wiki/Senora_Desert_Sheriff%27s_Office"),("LSPD", "/wiki/Los_Santos_Police_Department"),
+                          ("SASP", "/wiki/San_Andreas_State_Police"),("SASPR", "/wiki/San_Andreas_State_Park_Rangers"),("DOC", "/wiki/Department_of_Corrections"),
+                          ("DOJ", "/wiki/Department_of_Justice"),("EMS", "/wiki/Emergency_Medical_Services"),("MCU", "/wiki/Major_Crimes_Unit"),("LSMG", "/wiki/Los_Santos_Medical_Group"),
+                          ("HSPU", "/wiki/High_Speed_Pursuit_Unit")]
+
+GANG_DIR_URL = 'https://nopixel.fandom.com/wiki/Category:Gangs'
+GANG_DIR_URL_2 = 'https://nopixel.fandom.com/wiki/Category:Gangs?from=Seaside'
+RACING_DIR_URL = 'https://nopixel.fandom.com/wiki/Category:Racing_Crew'
 
 def find_each_group_from_directory(url):
 
@@ -18,21 +23,13 @@ def find_each_group_from_directory(url):
     
     return soup.find_all(class_ = "category-page__member-link")
 
-gangs_unref = find_each_group_from_directory(GANG_PAGE_URL)
-gangs_unref_p2 = find_each_group_from_directory(GANG_PAGE_URL_2)
-racing_unref = find_each_group_from_directory(RACING_CREW_URL)
+gangs_unref = find_each_group_from_directory(GANG_DIR_URL)
+gangs_unref_p2 = find_each_group_from_directory(GANG_DIR_URL_2)
+racing_unref = find_each_group_from_directory(RACING_DIR_URL)
 
 groups_unref = gangs_unref + gangs_unref_p2 + racing_unref
 group_names = []
 group_links = []
-
-
-def sanitize_wiki_link(url):
-
-    if 'http' in url:
-        return url
-    else:
-        return 'https://nopixel.fandom.com' + url
     
 
 def get_streamer_name_from_link(url):
@@ -50,7 +47,13 @@ for line in groups_unref:
     if ((not 'Template' in item_title) and ( not 'Category' in item_title) and (not item_title in group_names)):
 
         group_names.append(item_title)
-        group_links.append(sanitize_wiki_link(line.get('href')))
+        group_links.append(members_scrape.sanitize_wiki_link(line.get('href')))
+
+
+for dep in active_gov:
+
+    group_names.append(dep[0])
+    group_links.append(members_scrape.sanitize_wiki_link(dep[1]))
 
 
 group_quantity = len(group_names)
@@ -96,7 +99,8 @@ cursor.execute('''
                CREATE TABLE character_gang_link (
                member_id INTEGER PRIMARY KEY,
                member_character_id INTEGER REFERENCES characters(character_id),
-               member_gang_id INTEGER REFERENCES gangs(id)
+               member_gang_id INTEGER REFERENCES gangs(id),
+               member_role TEXT
                );
                ''')
 
@@ -158,7 +162,7 @@ for gang in all_gangs:
         else:
             character_id = cursor.lastrowid
 
-        cursor.execute('INSERT INTO character_gang_link (member_character_id, member_gang_id) VALUES (?, ?)', (character_id, gang_id))                                                                                                                             
+        cursor.execute('INSERT INTO character_gang_link (member_character_id, member_gang_id, member_role) VALUES (?, ?, ?)', (character_id, gang_id, character[1]))                                                                                                                             
 
     print('   PROGRESS -----> ' + ('⬜' * progress_rounded) + ('⬛' * (100 - progress_rounded)), end = "\r")
 
