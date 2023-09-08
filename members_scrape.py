@@ -48,38 +48,60 @@ def clean_role(role):
 
 def get_twitch_from_url(url):
 
-    html = get_html(url)
+    if 'wiki' in url:
+        html = get_html(url)
+    else:
+        return ''
 
     try:
         aside = html.find_all('aside')[0]
     except IndexError:
         print(f"Failed to process URL: {url}")
-        return None
+        return ''
 
     h3s = aside.find_all('h3', string=lambda text: any(word in (text or '').lower() for word in twitch_link_words))
 
     for h3 in h3s:
 
-        parent_div = h3.find_parent('div')
-        a_tag = parent_div.find('a')
+        h3parent_div = h3.find_parent('div')
+        h3a_tag = h3parent_div.find('a')
 
-        if a_tag:
+        if h3a_tag:
 
-            if ('twitch' in a_tag['href']):
-                return a_tag['href']
+            if ('twitch' in h3a_tag['href']):
+                return h3a_tag['href']
             
-            elif ('kick' in a_tag['href']):     #recursion is too slow in python
-                return a_tag['href']
+            elif ('kick' in h3a_tag['href']):     #recursion is too slow in python
+                return h3a_tag['href']
         
-            elif ('wiki' in a_tag['href']):
+            elif ('wiki' in h3a_tag['href']):
 
-                return get_twitch_from_url(sanitize_wiki_link(a_tag['href']))
-                
-            else:
-                return a_tag.text#figure out a method for the people it doesn't work for
+                return get_twitch_from_url(sanitize_wiki_link(h3a_tag['href']))
         
+    paragraphs = html.find_all('p')
+    matching_paragraphs = [paragraph for paragraph in paragraphs if 'role-played' in paragraph.get_text().lower()]
+
+    if len(matching_paragraphs) > 0:
+
+        paragraph = matching_paragraphs[0]
+        pa_tag = paragraph.find('a')
+    else:
+
+        pa_tag = None
+
+    if pa_tag:
+
+            if ('twitch' in pa_tag['href']):
+                return pa_tag['href']
+            
+            elif ('kick' in pa_tag['href']):     #recursion is too slow in python
+                return pa_tag['href']
         
-        else: return '' 
+            elif ('wiki' in pa_tag['href'] and not 'wikia' in pa_tag['href']):
+
+                return get_twitch_from_url(sanitize_wiki_link(pa_tag['href']))
+    
+    return ''
 
 
 def get_members_from_html(html):

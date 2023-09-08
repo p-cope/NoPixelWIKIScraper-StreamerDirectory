@@ -30,21 +30,24 @@ racing_unref = find_each_group_from_directory(RACING_DIR_URL)
 groups_unref = gangs_unref + gangs_unref_p2 + racing_unref
 group_names = []
 group_links = []
-    
+
+anon_no = 0
 
 def get_streamer_name_from_link(url):
+    global anon_no
     
     if url:
         return url.rstrip('/').split('/')[-1]
     else:
-        return url
+        anon_no += 1
+        return 'anon' + str(anon_no)
 
 
 for line in groups_unref:
 
     item_title = line.get('title')
 
-    if ((not 'Template' in item_title) and ( not 'Category' in item_title) and (not item_title in group_names)):
+    if ((not 'Template' in item_title) and ( not 'Category' in item_title) and (not '2.0' in item_title) and (not item_title in group_names)):
 
         group_names.append(item_title)
         group_links.append(members_scrape.sanitize_wiki_link(line.get('href')))
@@ -83,7 +86,7 @@ cursor.execute('''
                CREATE TABLE streamers (
                streamer_id INTEGER PRIMARY KEY,
                streamer_name TEXT UNIQUE,
-               streamer_link TEXT UNIQUE);
+               streamer_link TEXT);
                ''')
 
 cursor.execute('''
@@ -133,7 +136,6 @@ print()
 
 for gang in all_gangs:
 
-
     progress = gang_iter_index/group_quantity
     progress_rounded = round(progress * 100)
 
@@ -148,12 +150,14 @@ for gang in all_gangs:
         cursor.execute('SELECT id FROM gangs WHERE name = ?', (gang_name,))
         gang_id = cursor.fetchone()[0]
 
+
         cursor.execute('INSERT OR IGNORE INTO streamers (streamer_name, streamer_link) VALUES (?, ?)', (get_streamer_name_from_link(character[3]), character[3]))
         if cursor.rowcount == 0:
             cursor.execute("SELECT streamer_id FROM streamers WHERE streamer_name = ?", (get_streamer_name_from_link(character[3]),))
             streamer_id = cursor.fetchone()[0]
         else:
             streamer_id = cursor.lastrowid
+
 
         cursor.execute('INSERT OR IGNORE INTO characters (character_name, character_link, character_streamer_id) VALUES (?, ?, ?)', (character[0], character[2], streamer_id))
         if cursor.rowcount == 0:
