@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup as BS
-import requests
-import sqlite3
-import members_scrape
+import requests, sqlite3, members_scrape
+from alive_progress import alive_bar
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -47,7 +46,7 @@ for line in groups_unref:
 
     item_title = line.get('title')
 
-    if ((not 'Template' in item_title) and ( not 'Category' in item_title) and (not '2.0' in item_title) and (not 'members' in item_title.lower()) and (not item_title in group_names)):
+    if ((not 'Template' in item_title) and ( not 'Category' in item_title) and (not '2.0' in item_title) and (not 'members' in item_title.lower()) and ('/' not in item_title) and (not item_title in group_names)):
 
         group_names.append(item_title)
         group_links.append(members_scrape.sanitize_wiki_link(line.get('href')))
@@ -133,55 +132,42 @@ def sanitize(name):
 cursor.execute("SELECT name, link FROM gangs")
 all_gangs = cursor.fetchall()
 
-
-gang_iter_index = 1
 print()
 
+with alive_bar(len(all_gangs), title="Gathering Wiki Info and Inserting Into Tables") as bar:
+    for gang in all_gangs:
 
-for gang in all_gangs:
+        gang_name = gang[0]
+        gang_link = gang[1]
+        clean_gang_name = sanitize(gang_name)
+        members_list = members_scrape.url_to_members(gang_link)
 
-    progress = gang_iter_index/group_quantity
-    progress_rounded = round(progress * 100)
-
-
-    gang_name = gang[0]
-    gang_link = gang[1]
-    clean_gang_name = sanitize(gang_name)
-    members_list = members_scrape.url_to_members(gang_link)
-
-    for character in members_list:
+        for character in members_list:
         
-        cursor.execute('SELECT id FROM gangs WHERE name = ?', (gang_name,))
-        gang_id = cursor.fetchone()[0]
+            cursor.execute('SELECT id FROM gangs WHERE name = ?', (gang_name,))
+            gang_id = cursor.fetchone()[0]
 
 
-        cursor.execute('INSERT OR IGNORE INTO streamers (streamer_name, streamer_link, streamer_is_live, streamer_on_gta) VALUES (?, ?, 0, 0)', (get_streamer_name_from_link(character[3]), character[3]))
-        if cursor.rowcount == 0:
-            cursor.execute("SELECT streamer_id FROM streamers WHERE streamer_name = ?", (get_streamer_name_from_link(character[3]),))
-            streamer_id = cursor.fetchone()[0]
-        else:
-            streamer_id = cursor.lastrowid
+            cursor.execute('INSERT OR IGNORE INTO streamers (streamer_name, streamer_link, streamer_is_live, streamer_on_gta) VALUES (?, ?, 0, 0)', (get_streamer_name_from_link(character[3]), character[3]))
+            if cursor.rowcount == 0:
+                cursor.execute("SELECT streamer_id FROM streamers WHERE streamer_name = ?", (get_streamer_name_from_link(character[3]),))
+                streamer_id = cursor.fetchone()[0]
+            else:
+                streamer_id = cursor.lastrowid
 
 
-        cursor.execute('INSERT OR IGNORE INTO characters (character_name, character_link, character_streamer_id) VALUES (?, ?, ?)', (character[0], character[2], streamer_id))
-        if cursor.rowcount == 0:
-            cursor.execute("SELECT character_id FROM characters WHERE character_link = ?", (character[2],))
-            character_id = cursor.fetchone()[0]
-        else:
-            character_id = cursor.lastrowid
+            cursor.execute('INSERT OR IGNORE INTO characters (character_name, character_link, character_streamer_id) VALUES (?, ?, ?)', (character[0], character[2], streamer_id))
+            if cursor.rowcount == 0:
+                cursor.execute("SELECT character_id FROM characters WHERE character_link = ?", (character[2],))
+                character_id = cursor.fetchone()[0]
+            else:
+                character_id = cursor.lastrowid
 
-        cursor.execute('INSERT INTO character_gang_link (member_character_id, member_gang_id, member_role) VALUES (?, ?, ?)', (character_id, gang_id, character[1]))                                                                                                                             
+            cursor.execute('INSERT INTO character_gang_link (member_character_id, member_gang_id, member_role) VALUES (?, ?, ?)', (character_id, gang_id, character[1]))                                                                                                                             
 
-    print('   PROGRESS -----> ' + ('⬜' * progress_rounded) + ('⬛' * (100 - progress_rounded)), end = "\r")
-
-    gang_iter_index += 1
-
-
-print("\n" * 2)
-print("WRAPPING UP")
+        bar()
 
 cursor.execute('''DELETE FROM gangs WHERE id NOT IN (SELECT DISTINCT member_gang_id FROM character_gang_link)''')
-
-print("finished")
+print()
 
 conn.commit()
