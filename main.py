@@ -37,7 +37,7 @@ def get_streamer_name_from_link(url):
     global anon_no
     
     if url:
-        return url.rstrip('/').split('/')[-1]
+        return (url.rstrip('/').split('/')[-1]).lower()
     else:
         anon_no += 1
         return 'anon' + str(anon_no)
