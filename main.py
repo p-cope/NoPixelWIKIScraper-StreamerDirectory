@@ -47,7 +47,7 @@ for line in groups_unref:
 
     item_title = line.get('title')
 
-    if ((not 'Template' in item_title) and ( not 'Category' in item_title) and (not '2.0' in item_title) and (not item_title in group_names)):
+    if ((not 'Template' in item_title) and ( not 'Category' in item_title) and (not '2.0' in item_title) and (not 'members' in item_title.lower()) and (not item_title in group_names)):
 
         group_names.append(item_title)
         group_links.append(members_scrape.sanitize_wiki_link(line.get('href')))
@@ -174,4 +174,10 @@ for gang in all_gangs:
 
 
 print("\n" * 2)
+print("WRAPPING UP")
+
+cursor.execute('''DELETE FROM gangs WHERE id NOT IN (SELECT DISTINCT member_gang_id FROM character_gang_link)''')
+
+print("finished")
+
 conn.commit()
