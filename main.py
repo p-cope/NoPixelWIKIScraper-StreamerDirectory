@@ -80,7 +80,8 @@ cursor.execute('''
                id INTEGER PRIMARY KEY,
                name TEXT not NULL,
                link TEXT UNIQUE,
-               people_live INTEGER NOT NULL);
+               people_live INTEGER NOT NULL,
+               people_on_gta INTEGER NOT NULL);
                ''')
 
 cursor.execute('''
@@ -112,7 +113,7 @@ cursor.execute('''
 
 
 for i in range(group_quantity):
-    cursor.execute("INSERT INTO gangs (name, link, people_live) VALUES (?, ?, 0)", (group_names[i], group_links[i]))
+    cursor.execute("INSERT INTO gangs (name, link, people_live, people_on_gta) VALUES (?, ?, 0, 0)", (group_names[i], group_links[i]))
 
 conn.commit()
 
