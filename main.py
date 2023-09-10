@@ -79,7 +79,8 @@ cursor.execute('''
                CREATE TABLE gangs (
                id INTEGER PRIMARY KEY,
                name TEXT not NULL,
-               link TEXT UNIQUE);
+               link TEXT UNIQUE,
+               people_live INTEGER NOT NULL);
                ''')
 
 cursor.execute('''
@@ -111,7 +112,7 @@ cursor.execute('''
 
 
 for i in range(group_quantity):
-    cursor.execute("INSERT INTO gangs (name, link) VALUES (?, ?)", (group_names[i], group_links[i]))
+    cursor.execute("INSERT INTO gangs (name, link, people_live) VALUES (?, ?, 0)", (group_names[i], group_links[i]))
 
 conn.commit()
 
@@ -153,7 +154,7 @@ for gang in all_gangs:
         gang_id = cursor.fetchone()[0]
 
 
-        cursor.execute('INSERT OR IGNORE INTO streamers (streamer_name, streamer_link, streamer_is_live, streamer_on_gta) VALUES (?, ?, ?, ?)', (get_streamer_name_from_link(character[3]), character[3], 0, 0))
+        cursor.execute('INSERT OR IGNORE INTO streamers (streamer_name, streamer_link, streamer_is_live, streamer_on_gta) VALUES (?, ?, 0, 0)', (get_streamer_name_from_link(character[3]), character[3]))
         if cursor.rowcount == 0:
             cursor.execute("SELECT streamer_id FROM streamers WHERE streamer_name = ?", (get_streamer_name_from_link(character[3]),))
             streamer_id = cursor.fetchone()[0]
