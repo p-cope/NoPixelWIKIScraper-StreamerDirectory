@@ -44,7 +44,7 @@ def clean_role(role):
         if not char.isnumeric() or index < 3: cleaned_role += char
         index += 1
 
-    return cleaned_role.strip()
+    return cleaned_role.strip().lower()
 
 
 def get_twitch_from_url(url):
@@ -116,12 +116,12 @@ def get_members_from_html(html):
 
         parent_div = line.find_parent('div')
         member_name_tag = parent_div.find('a')
-        if (member_name_tag and (member_name_tag.text not in members_set)):
+        if (member_name_tag and (member_name_tag.text.lower() not in members_set)):
             
-            link = sanitize_wiki_link(member_name_tag['href'])
+            link = sanitize_wiki_link(member_name_tag['href']).lower()
             
-            members.append((member_name_tag.text, clean_role(line.text), link, get_twitch_from_url(link)))
-            members_set.add(member_name_tag.text)   #need to implement a fix for when there are several people in one box-- the GSF problem!
+            members.append((member_name_tag.text.lower(), clean_role(line.text), link.lower(), get_twitch_from_url(link).lower()))
+            members_set.add(member_name_tag.text.lower())   #need to implement a fix for when there are several people in one box-- the GSF problem!
     
     return members
 
