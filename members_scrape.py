@@ -78,23 +78,6 @@ def get_twitch_from_url(url):
             elif ('wiki' in h3a_tag['href']):
 
                 return get_twitch_from_url(sanitize_wiki_link(h3a_tag['href']))
-        
-    '''paragraphs = html.find_all('p')
-
-    for paragraph in paragraphs:
-        if 'role-played' in paragraph.get_text().lower():
-            print('x' * 1000)
-            print(paragraph)
-
-    matching_paragraphs = [paragraph for paragraph in paragraphs if 'role-played' in paragraph.text.lower()]
-
-    if len(matching_paragraphs) > 0:
-
-        paragraph = matching_paragraphs[0]
-        pa_tag = paragraph.find('a')
-    else:
-
-        pa_tag = None'''
     
     pa_tag = None
 

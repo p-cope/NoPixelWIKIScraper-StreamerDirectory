@@ -87,7 +87,8 @@ cursor.execute('''
                streamer_id INTEGER PRIMARY KEY,
                streamer_name TEXT UNIQUE,
                streamer_link TEXT,
-               streamer_is_live INTEGER NOT NULL CHECK(streamer_is_live IN (0, 1)));
+               streamer_is_live INTEGER NOT NULL CHECK(streamer_is_live IN (0, 1)),
+               streamer_on_gta INTEGER NOT NULL CHECK(streamer_is_live IN (0, 1)));
                ''')
 
 cursor.execute('''
@@ -152,7 +153,7 @@ for gang in all_gangs:
         gang_id = cursor.fetchone()[0]
 
 
-        cursor.execute('INSERT OR IGNORE INTO streamers (streamer_name, streamer_link, streamer_is_live) VALUES (?, ?, ?)', (get_streamer_name_from_link(character[3]), character[3], 0))
+        cursor.execute('INSERT OR IGNORE INTO streamers (streamer_name, streamer_link, streamer_is_live, streamer_on_gta) VALUES (?, ?, ?, ?)', (get_streamer_name_from_link(character[3]), character[3], 0, 0))
         if cursor.rowcount == 0:
             cursor.execute("SELECT streamer_id FROM streamers WHERE streamer_name = ?", (get_streamer_name_from_link(character[3]),))
             streamer_id = cursor.fetchone()[0]
